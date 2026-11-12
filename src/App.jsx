@@ -1,50 +1,56 @@
-import React from 'react'
-import Register from './Logins/Register'
-import SignIn from './Logins/SignIn'
-import { Route , Routes } from 'react-router-dom'
-import Home from './Components/Home'
-import BrowseExercise from './Pages/BrowseExercise'
-import MuscleExercises from './Components/Muscles'
-import Plans from './Pages/Plans'
-import DietPlans from './Pages/DietPlans'
-import { LoadingProvider } from './Loaders/LoadingContext'
-import WorkoutPlan from './Exercises/WorkoutPlan'
-import AllExercises from './Pages/AllExercises'
-import CustomPlan from './Pages/CustomPlan'
-import MyWorkoutPlans from './Pages/MyWorkoutPlans'
-import WorkoutPlanDetail from './Pages/WorkoutPlanDetail'
-import EditPlan from './Pages/EditPlan'
-import NearbyGymsPage from './Pages/NearbyGymsPage'
-import FoodAnalysis from './Pages/FoodAnalysis'
-import AITrainerChatbot from './Components/AITrainerChatbot'
+import { lazy, Suspense, useEffect } from 'react';
+import { Route, Routes, useLocation } from 'react-router';
+import { GuestOnly, RequireAuth } from '@/lib/auth';
+import { FullScreenLoader } from '@/components/ui/Spinner';
+import AppShell from '@/components/AppShell';
 
-const App = () => {
+const Landing = lazy(() => import('@/pages/Landing'));
+const Auth = lazy(() => import('@/pages/Auth'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+const Today = lazy(() => import('@/pages/app/Today'));
+const Library = lazy(() => import('@/pages/app/Library'));
+const Programs = lazy(() => import('@/pages/app/Programs'));
+const ProgramView = lazy(() => import('@/pages/app/ProgramView'));
+const Builder = lazy(() => import('@/pages/app/Builder'));
+const Fuel = lazy(() => import('@/pages/app/Fuel'));
+const Scan = lazy(() => import('@/pages/app/Scan'));
+const Gyms = lazy(() => import('@/pages/app/Gyms'));
+const Coach = lazy(() => import('@/pages/app/Coach'));
+const Settings = lazy(() => import('@/pages/app/Settings'));
 
-  return (
-    <div>
-    <LoadingProvider>
-      <Routes>
-        <Route path="/" element={<SignIn/>} ></Route>
-        <Route path="/register" element={<Register/>} ></Route>
-        <Route path="/login" element={<SignIn/>} ></Route>
-        <Route path="/home" element={<Home/>} ></Route>
-        <Route path="/muscle" element={<BrowseExercise/>} ></Route>
-        <Route path="/diet" element={<DietPlans/>} ></Route>
-        <Route path="/muscle/:muscle" element={<MuscleExercises/>} ></Route>
-        <Route path="/plans" element={<Plans />} />
-        <Route path="/plans/:plan" element={<WorkoutPlan />} />
-        <Route path="/exercises" element={<AllExercises />} />
-        <Route path="/create-plan" element={<CustomPlan />} />
-        <Route path="/my-plans" element={<MyWorkoutPlans />} />
-        <Route path="/workout-plan/:id" element={<WorkoutPlanDetail />} />
-        <Route path="/edit-plan/:id" element={<EditPlan />} />
-        <Route path="/nearby-gyms" element={<NearbyGymsPage />} />
-        <Route path="/food-analysis" element={<FoodAnalysis />} />
-      </Routes>
-      <AITrainerChatbot />
-    </LoadingProvider>
-    </div>
-  )
+function ScrollReset() {
+  const { pathname } = useLocation();
+  // Braces matter: newer browsers return a Promise from scrollTo, which React would treat as a cleanup.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
+  return null;
 }
 
-export default App
+export default function App() {
+  return (
+    <Suspense fallback={<FullScreenLoader />}>
+      <ScrollReset />
+      <Routes>
+        <Route index element={<Landing />} />
+        <Route path="login" element={<GuestOnly><Auth mode="login" /></GuestOnly>} />
+        <Route path="signup" element={<GuestOnly><Auth mode="signup" /></GuestOnly>} />
+        <Route path="app" element={<RequireAuth><AppShell /></RequireAuth>}>
+          <Route index element={<Today />} />
+          <Route path="library" element={<Library />} />
+          <Route path="programs" element={<Programs />} />
+          <Route path="programs/t/:slug" element={<ProgramView />} />
+          <Route path="programs/:id" element={<ProgramView />} />
+          <Route path="builder" element={<Builder />} />
+          <Route path="builder/:id" element={<Builder />} />
+          <Route path="fuel" element={<Fuel />} />
+          <Route path="scan" element={<Scan />} />
+          <Route path="gyms" element={<Gyms />} />
+          <Route path="coach" element={<Coach />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+}

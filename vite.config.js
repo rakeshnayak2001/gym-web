@@ -1,11 +1,19 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath, URL } from 'node:url';
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  base: '/',  // This ensures assets are loaded correctly
-  build: {
-    outDir: 'dist'
-  }
-})
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
+  server: {
+    port: 5173,
+    // In dev, /api is proxied to the local backend so no CORS setup is needed.
+    proxy: {
+      '/api': { target: process.env.VITE_DEV_API ?? 'http://localhost:8000', changeOrigin: true },
+      '/health': { target: process.env.VITE_DEV_API ?? 'http://localhost:8000', changeOrigin: true },
+    },
+  },
+});
